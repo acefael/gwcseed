@@ -12,6 +12,10 @@
 var http   = require("http")
 var async  = require("async")
 
+var gwc_port = 8001
+var gwc_context = '/geowebcache'
+var gwc_credentials = 'geowebcache:secured'
+
 /// max number of tasks gwc can have in the queue
 var MAX_TASKS = 2
 
@@ -32,9 +36,9 @@ var tasks = [
 
 /// receives one of the item in tasks as a parameter
 var consumerFunction = function( item , cb ) {
-  var req = http.request( { port: 8001 ,
-                            path: '/geowebcache/rest/seed/'+item['layer']+'.json' ,
-                            auth: 'geowebcache:secured' ,
+  var req = http.request( { port: gwc_port ,
+                            path: gwc_context + '/rest/seed/'+item['layer']+'.json' ,
+                            auth: gwc_credentials ,
                             keepAlive: true ,
                             method: 'POST' ,
                             headers: { 'Content-type': 'application/json' } } )
@@ -82,9 +86,9 @@ var producerFunction = function(){
   }
 
   // send the task info request
-  http.request( { port: 8001 ,
-                  path: '/geowebcache/rest/seed.json' ,
-                  auth: 'geowebcache:secured' ,
+  http.request( { port: gwc_port ,
+                  path: gwc_context + '/rest/seed.json' ,
+                  auth: gwc_credentials ,
                   keepAlive: true } ,
 		function(res) {
 		  res.on( 'data' , function(chunk) { body+=chunk } )
