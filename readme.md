@@ -6,7 +6,7 @@ A tool for seeding GeoWebCache Layers through the GeoWebCache REST interface.
 
 # Motivation
 
-For performance reasons it is useful to seed GeoWebCache cached WMS layers.  Seeting a whole layer is an option, in case you can configure the area of interest as the gridSubset in the layer configuration.
+For performance reasons it is useful to seed GeoWebCache cached WMS layers.  Seeding a whole layer is an option, in case you can configure the area of interest as the gridSubset in the layer configuration.
 
 If you want to seed dispersed areas, or want to automate the seeding process, then this tool is for you.
 
@@ -19,6 +19,7 @@ It is a requirement, but not yet implemented, to generate the layer / area confi
     git clone https://github.com/acefael/gwcseed.git
     cd gwcseed
     npm install async
+    npm install lazy
 
 # Configuration
 
@@ -33,26 +34,28 @@ In `gwcseed.js` there are some configuration variables at the top, e.g. the GeoW
 You might want to tweak:
 
 * `gwcseed.js` configures `MAX_TASKS`.  That's the number of items in the Task Queue inside GeoWebCache that, when reached, makes the Seeder not post any more Tasks.
-* inside `consumerFunction()`
-
-  * `zoomStart` and `zoomStart` are hardcoded.  Ultimately they should be specified with each configured Seed Task in our own `tasks` array.
-  * `threadCount` is something for the GWC seeding engine.
+* inside `consumerFunction()`, `threadCount` is something for the GWC seeding engine.
 
 ## Seed Area and GWC Layers
 
-The `tasks` array is the most important one.  It contains items that conform to the following protocol:
+The `tasks.js` file must be provided/changed to configure the seed area.  It contains a JSON object per line, each conforming to the following protocol:
 
 * `srs`: EPSG code you want to seed
 * `coords`: area to seed in this request
 * `layer`: name of WMS layer in GeoWebCache
+* `zoomStart`: zoom level to start seeding from
+* `zoomStop`: zoom level to seed to
+* `type`: allowed seed types are 'reseed', 'seed', 'truncate'
 
-Items in the git repo are somewhere over Madrid as I have used a WMS from CartoCiudad for testing purposes.
+The items in the git repo sample seed tasks file `tasks.js` are somewhere over Madrid as I have used a WMS from CartoCiudad for testing purposes.
 
 # The Way Forward
 
 What I am thinking of changing in the future:
 
-- reading `tasks` from an external file
-- adding all currently in `consumerFunction()` hardcoded parameters of the GWC seed request to the items in `tasks`
-- use some configuration mechanism for the server Settings
-- logging
+- [DONE] Read `tasks` from an external file
+- [DONE] Add all currently in `consumerFunction()` hardcoded parameters of the GWC seed request to the items in `tasks`.
+- Use configuration mechanism for the server settings.
+- Logging
+- Read tasks from a directory of files.
+- Make consumer function parameters configurable, e.g. `threadCount` and `format`.

@@ -11,6 +11,8 @@
 
 var http   = require("http")
 var async  = require("async")
+var fs     = require("fs")
+var lazy   = require("lazy")
 
 var gwc_port = 8001
 var gwc_context = '/geowebcache'
@@ -26,13 +28,7 @@ var ctask = 0
 var producerInterval = 500
 
 /// array of seed request details
-var tasks = [
-  {"srs":25830,"coords":[441188,4474450,441488,4474150,"layer":"cartociudad"]},
-  {"srs":25830,"coords":[441488,4474450,441788,4474150,"layer":"cartociudad"]},
-  {"srs":25830,"coords":[438788,4474150,439088,4473850,"layer":"cartociudad"]},
-  {"srs":25830,"coords":[439088,4474150,439388,4473850,"layer":"cartociudad"]},
-  {"srs":25830,"coords":[439388,4474150,439688,4473850,"layer":"cartociudad"]},
-]
+var tasks = new Array()
 
 /// receives one of the item in tasks as a parameter
 var consumerFunction = function( item , cb ) {
@@ -43,13 +39,13 @@ var consumerFunction = function( item , cb ) {
                             method: 'POST' ,
                             headers: { 'Content-type': 'application/json' } } )
   var rdata = { name: item['layer'] ,
-                bounds: {coords:{ double: item['coords'] } } ,
-                srs:{number:item['srs']} ,
-                zoomStart: 1,
-                zoomStop: 20,
+                bounds: {coords: { double: item['coords'] } } ,
+                srs: {number: item['srs']} ,
+                zoomStart: item['zoomStart'],
+                zoomStop: item['zoomStop'],
                 format:'image/png',
-                type:'reseed',
-                threadCount:1 }
+                type: item['type'],
+                threadCount: 1 }
   rdata = { seedRequest: rdata }
   rdata = JSON.stringify(rdata)
   req.on('error', function(e) {
@@ -96,5 +92,15 @@ var producerFunction = function(){
     .end()
 }
 
-// this fires off the check for number of tasks
-int1 = setInterval( producerFunction , producerInterval )
+//
+// read tasks and fire off seeding
+//
+new lazy( fs.createReadStream("tasks.js") )
+  .lines
+  .map( function(l) { return JSON.parse(l.toString()) } )
+  .forEach( function( task ) { tasks.push( task ) } )
+  .on( 'pipe' , function(){
+    // this fires off the check for number of tasks
+    int1 = setInterval( producerFunction , producerInterval )
+  })
+
